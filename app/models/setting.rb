@@ -84,6 +84,7 @@ class Setting < RailsSettings::Base
       openai_access_token
       anthropic_access_token
       external_assistant_token
+      gdrive_service_account_json
     ].freeze
 
     ENCRYPTED_FIELDS.each do |field_name|
@@ -160,6 +161,28 @@ class Setting < RailsSettings::Base
   def self.valid_auto_sync_timezone?(timezone_str)
     return false if timezone_str.blank?
     ActiveSupport::TimeZone[timezone_str].present?
+  end
+
+  # Database backups (daily pg_dump uploaded to Google Drive — see
+  # BackupScheduler, DatabaseBackupJob, Backup::Runner)
+  field :backup_enabled, type: :boolean, default: ENV.fetch("BACKUP_ENABLED", "0") == "1"
+  field :backup_time, type: :string, default: ENV.fetch("BACKUP_TIME", "03:30")
+  field :backup_timezone, type: :string, default: ENV.fetch("BACKUP_TIMEZONE", "UTC")
+  field :backup_keep_days, type: :integer, default: ENV.fetch("BACKUP_KEEP_DAYS", "30").to_i
+  field :gdrive_folder_id, type: :string, default: ENV["GDRIVE_BACKUP_FOLDER_ID"]
+  field :gdrive_service_account_json, type: :string
+
+  # Status of the most recent backup run, surfaced in Settings > Backups
+  field :last_backup_at, type: :string
+  field :last_backup_status, type: :string
+  field :last_backup_error, type: :string
+  field :last_backup_size_bytes, type: :integer
+
+  BACKUP_TIME_FORMAT = /\A([01]?\d|2[0-3]):([0-5]\d)\z/
+
+  def self.valid_backup_time?(time_str)
+    return false if time_str.blank?
+    BACKUP_TIME_FORMAT.match?(time_str.to_s.strip)
   end
 
   # Dynamic fields are now stored as individual entries with "dynamic:" prefix

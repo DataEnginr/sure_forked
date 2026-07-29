@@ -330,6 +330,7 @@ en:
       mcp_label: MCP
       security_label: Security
       self_hosting_label: Self-Hosting
+      backups_label: Backups
       sso_providers_label: SSO Providers
       statement_vault_label: Statement Vault
       tags_label: Tags

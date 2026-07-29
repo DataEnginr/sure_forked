@@ -1,0 +1,33 @@
+en:
+  settings:
+    backups:
+      show:
+        title: Backups
+        status_title: Backup status
+        last_backup_label: Last backup
+        status_success: Succeeded
+        status_failed: Failed
+        never_run: No backup has run yet
+        run_now: Run backup now
+        schedule_title: Daily schedule
+        backup_enabled_label: Automatic daily backups
+        backup_enabled_description: Runs a database backup once a day and uploads it to Google Drive.
+        backup_time_label: Backup time
+        backup_time_description: Time of day (in your local timezone) the daily backup runs.
+        backup_keep_days_label: Retention
+        backup_keep_days_description: Number of days of backups to keep on Google Drive before older ones are deleted.
+        gdrive_title: Google Drive
+        gdrive_subtitle: Backups are uploaded to a folder in Google Drive via a service account.
+        gdrive_folder_id_label: Google Drive folder ID
+        gdrive_folder_id_hint: The ID from the folder's URL, e.g. https://drive.google.com/drive/folders/<strong>THIS_PART</strong>
+        gdrive_service_account_label: Service account JSON key
+        gdrive_service_account_hint: Paste the full contents of the service account's JSON key file. Stored encrypted. Leave as "********" to keep the existing value.
+        gdrive_quota_warning: Service accounts have no Drive storage quota of their own — share the destination folder with the service account's email (the "client_email" field in the JSON key) with Editor access, or use a Shared Drive, or uploads will fail.
+        save: Save
+      update:
+        success: Backup settings updated.
+        invalid_backup_time: Please enter a valid time (HH:MM).
+        scheduler_sync_failed: Settings saved, but the backup schedule could not be updated. Check the logs.
+        not_authorized: You are not authorized to update backup settings.
+      run_now:
+        run_now_started: Backup started in the background — check back here shortly for the result.

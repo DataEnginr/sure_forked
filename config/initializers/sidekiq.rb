@@ -70,6 +70,13 @@ Sidekiq.configure_server do |config|
   rescue => e
     Rails.logger.error("[AutoSyncScheduler] Failed to initialize: #{e.message}")
   end
+
+  config.on(:startup) do
+    BackupScheduler.sync!
+    Rails.logger.info("[BackupScheduler] Initialized database_backup cron job")
+  rescue => e
+    Rails.logger.error("[BackupScheduler] Failed to initialize: #{e.message}")
+  end
 end
 
 Sidekiq.configure_client do |config|
