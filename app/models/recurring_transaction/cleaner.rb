@@ -25,12 +25,31 @@ class RecurringTransaction
             .find_each do |recurring_transaction|
         next unless recurring_transaction.should_be_inactive?
 
+        # A financed plan with installments still due is not stale.
+        if recurring_transaction.financed? &&
+           recurring_transaction.recurring_occurrences
+             .where(status: "scheduled")
+             .where("due_on >= ?", Date.current)
+             .exists?
+          next
+        end
+
         # Double-check if there are any recent matching transactions
         threshold = recurring_transaction.staleness_threshold_date
         recent_matches = recurring_transaction.matching_transactions.select { |entry| entry.date >= threshold }
 
         if recent_matches.empty?
-          recurring_transaction.mark_inactive!
+          if recurring_transaction.financed?
+            # A charged plan stays locked to its purchase, so pausing it keeps
+            # that ownership; an uncharged stale plan is over and releases it.
+            if recurring_transaction.financed_charges_recorded?
+              recurring_transaction.mark_inactive!
+            else
+              recurring_transaction.update!(status: "ended")
+            end
+          else
+            recurring_transaction.mark_inactive!
+          end
           stale_count += 1
         end
       end

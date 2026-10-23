@@ -6,9 +6,35 @@ class Transactions::BulkDeletionsController < ApplicationController
     entries_scope = Current.family.entries
                       .where(account_id: writable_account_ids)
                       .where(parent_entry_id: nil)
-    destroyed = entries_scope.destroy_by(id: bulk_delete_params[:entry_ids])
+    selected = entries_scope.where(id: bulk_delete_params[:entry_ids])
+
+    # A purchase owned by an installment plan is locked: deleting it would
+    # make the plan disagree with the schedule that replaced it. Leave it
+    # alone and tell the user why, instead of reporting it as deleted.
+    locked_entry_ids = RecurringTransaction
+      .where(financed_source_entry_id: selected.pluck(:id))
+      .filter_map { |plan| plan.financed_source_entry_id if plan.financed_purchase_locked? }
+      .to_set
+    locked = selected.select { |entry| locked_entry_ids.include?(entry.id) }
+    deletable = selected - locked
+
+    destroyed = []
+    deletable.each do |entry|
+      entry.destroy
+      destroyed << entry if entry.destroyed?
+    end
     destroyed.map(&:account).uniq.each(&:sync_later)
-    redirect_back_or_to transactions_url, notice: "#{destroyed.count} transaction#{destroyed.count == 1 ? "" : "s"} deleted"
+
+    if locked.any? && destroyed.empty?
+      redirect_back_or_to transactions_url,
+        alert: t("transactions.bulk_deletions.locked", count: locked.count)
+    elsif locked.any?
+      redirect_back_or_to transactions_url,
+        alert: t("transactions.bulk_deletions.partial", destroyed: destroyed.count, locked: locked.count)
+    else
+      redirect_back_or_to transactions_url,
+        notice: t("transactions.bulk_deletions.deleted", count: destroyed.count)
+    end
   end
 
   private

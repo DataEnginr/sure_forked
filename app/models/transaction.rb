@@ -24,6 +24,7 @@ class Transaction < ApplicationRecord
   ].freeze
 
   validate :validate_attachments, if: -> { attachments.attached? }
+  validate :planned_purchase_terms_locked
 
   accepts_nested_attributes_for :taggings, allow_destroy: true
 
@@ -63,6 +64,17 @@ class Transaction < ApplicationRecord
           errors.add(:exchange_rate, "must be greater than 0")
         end
       end
+    end
+
+    # The plan owns the purchase's category and kind. The entry-level lock
+    # guards the financial fields; this guards the fields on the entryable.
+    def planned_purchase_terms_locked
+      return unless will_save_change_to_category_id? ||
+                    will_save_change_to_merchant_id? ||
+                    will_save_change_to_kind?
+      return unless entry&.installment_plan_locked?
+
+      errors.add(:base, :installment_plan_locked)
     end
 
   public
@@ -256,6 +268,11 @@ class Transaction < ApplicationRecord
   # Expects a relation without eager loading so reselect(:id) produces
   # a single-column subquery for the IN clause.
   def self.reassign_category!(scope, category_id)
+    locked_source_entry_ids = RecurringTransaction
+      .where.not(financed_source_entry_id: nil)
+      .filter_map { |plan| plan.financed_source_entry_id if plan.financed_purchase_locked? }
+    scope = scope.joins(:entry).where.not(entries: { id: locked_source_entry_ids }) if locked_source_entry_ids.any?
+
     transaction do
       # Lock inside the scope so a concurrent category edit is rechecked before
       # its ID reaches the UPDATE, rather than overwriting the new category.
