@@ -323,6 +323,25 @@ class TransactionsTest < ApplicationSystemTestCase
   end
 
 
+  test "can clear a merchant from the bulk edit drawer" do
+    transaction = @transactions.find { |entry| entry.transaction.merchant_id.present? }
+    transaction_checkbox(transaction).check
+
+    within "#entry-selection-bar" do
+      find("a[title='#{I18n.t("transactions.selection_bar.edit")}']").click
+    end
+
+    within "turbo-frame#bulk_transaction_edit_drawer" do
+      find("#merchant_id_trigger").click
+      find("[role='option'][data-filter-name='(none)']").click
+
+      click_button I18n.t("transactions.bulk_updates.new.save")
+    end
+
+    assert_text "1 transactions updated"
+    assert_nil transaction.reload.transaction.merchant
+  end
+
   test "can create deposit transaction for investment account" do
     investment_account = accounts(:investment)
     investment_account.entries.create!(name: "Investment account", date: Date.current, amount: 1000, currency: "USD", entryable: Transaction.new)
