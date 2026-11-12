@@ -715,7 +715,7 @@ class TransactionsController < ApplicationController
     end
 
     def set_new_transaction_form_options
-      accessible_accounts_scope = accessible_accounts.where.not(accountable_type: "Valuable")
+      accessible_accounts_scope = accessible_accounts.where.not(accountable_type: "PreciousAsset")
 
       @account_currencies = accessible_accounts_scope.pluck(:id, :currency).to_h
       @manual_accounts = accessible_accounts_scope

@@ -408,7 +408,7 @@ class AccountStatement < ApplicationRecord
 
     def account_supports_statements
       if account && !account.supports_statements?
-        errors.add(:account, I18n.t("valuables.errors.statements_unsupported"))
+        errors.add(:account, I18n.t("precious_assets.errors.statements_unsupported"))
       end
     end
 

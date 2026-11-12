@@ -1,4 +1,4 @@
-class ValuableItem < ApplicationRecord
+class PreciousAssetItem < ApplicationRecord
   INVOICE_MAX_SIZE = 10.megabytes
   ALLOWED_INVOICE_CONTENT_TYPES = %w[image/jpeg image/jpg image/png image/gif image/webp application/pdf].freeze
   BULLION_MATERIALS = { "gold" => "XAU", "silver" => "XAG", "platinum" => "XPT", "palladium" => "XPD" }.freeze
@@ -7,8 +7,8 @@ class ValuableItem < ApplicationRecord
   BULLION_WEIGHT_UNITS = %w[gram troy_ounce kilogram].freeze
   QUANTITY_FORMAT = /\A[+-]?\d+(?:\.0+)?\z/
 
-  belongs_to :valuable
-  has_one :account, through: :valuable
+  belongs_to :precious_asset
+  has_one :account, through: :precious_asset
   delegate :id, to: :account, prefix: true
   delegate :family_id, to: :account
   belongs_to :merchant, optional: true
@@ -52,7 +52,7 @@ class ValuableItem < ApplicationRecord
   def gemstone? = item_type == "gemstone"
   def spot_valued? = bullion? && !manual_value?
   def quote_symbol = BULLION_MATERIALS[material]
-  def weight_in_grams = ValuableWeight.in_grams(weight, weight_unit)
+  def weight_in_grams = PreciousAssetWeight.in_grams(weight, weight_unit)
   def fine_weight_in_grams = weight_in_grams * purity.to_d / 100
 
   # quantity is the count of identical pieces. weight and purity describe one
@@ -66,7 +66,7 @@ class ValuableItem < ApplicationRecord
   def value_for(price_per_troy_ounce = nil)
     return manual_value.to_d if manual_value.present?
     return BigDecimal(0) unless spot_valued? && price_per_troy_ounce
-    total_fine_weight_in_grams * price_per_troy_ounce.to_d / ValuableWeight::TROY_OUNCE_GRAMS
+    total_fine_weight_in_grams * price_per_troy_ounce.to_d / PreciousAssetWeight::TROY_OUNCE_GRAMS
   end
   def manual_value? = manual_value.present?
   def total_cost_amount = cost_amount.to_d + making_charge.to_d
@@ -135,13 +135,13 @@ class ValuableItem < ApplicationRecord
     end
 
     def mark_valuation_pending
-      valuable.update_columns(valuation_pending: true) unless valuable.destroyed? || destroyed_by_association
+      precious_asset.update_columns(valuation_pending: true) unless precious_asset.destroyed? || destroyed_by_association
     end
 
     def refresh_valuation_later
-      return if skip_queued_valuation_refresh || destroyed_by_association || !Valuable.exists?(valuable_id)
+      return if skip_queued_valuation_refresh || destroyed_by_association || !PreciousAsset.exists?(precious_asset_id)
 
-      RefreshValuableValuationJob.perform_later(account_id)
+      RefreshPreciousAssetValuationJob.perform_later(account_id)
     end
 
     def merchant_belongs_to_account_family

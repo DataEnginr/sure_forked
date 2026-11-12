@@ -3,7 +3,7 @@ Rails.application.config.to_prepare do
   module ActiveStorageAttachmentAuthorization
     extend ActiveSupport::Concern
     # STI subclasses (PdfImport, SureImport, ...) are stored under their base class, "Import".
-    PROTECTED_RECORD_TYPES = %w[Transaction AccountStatement FamilyExport Import FamilyDocument ValuableItem].freeze
+    PROTECTED_RECORD_TYPES = %w[Transaction AccountStatement FamilyExport Import FamilyDocument PreciousAssetItem].freeze
 
     included do
       include Authentication
@@ -80,8 +80,8 @@ Rails.application.config.to_prepare do
           transaction_attachment_authorized?(attachment)
         when "AccountStatement"
           account_statement_attachment_authorized?(attachment)
-        when "ValuableItem"
-          valuable_item_invoice_authorized?(attachment)
+        when "PreciousAssetItem"
+          precious_asset_item_invoice_authorized?(attachment)
         when "FamilyExport"
           family_export_attachment_authorized?(attachment)
         when "Import"
@@ -113,7 +113,7 @@ Rails.application.config.to_prepare do
         false
       end
 
-      def valuable_item_invoice_authorized?(attachment)
+      def precious_asset_item_invoice_authorized?(attachment)
         lot = attachment.record
         return false if lot.nil?
 

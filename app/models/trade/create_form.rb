@@ -27,7 +27,7 @@ class Trade::CreateForm
   def create
     unless account.supports_trades?
       entry = account.entries.build(entryable: Trade.new)
-      entry.errors.add(:base, I18n.t("valuables.errors.trades_unsupported"))
+      entry.errors.add(:base, I18n.t("precious_assets.errors.trades_unsupported"))
       return entry
     end
 

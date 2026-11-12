@@ -219,13 +219,13 @@ class Transfer::CreatorTest < ActiveSupport::TestCase
     end
   end
 
-  test "refuses to book a transfer into a valuable account" do
-    valuable = @family.accounts.create!(name: "Gold bars", balance: 0, currency: "USD", accountable: Valuable.new)
+  test "refuses to book a transfer into a precious_asset account" do
+    precious_asset = @family.accounts.create!(name: "Gold bars", balance: 0, currency: "USD", accountable: PreciousAsset.new)
 
     creator = Transfer::Creator.new(
       family: @family,
       source_account_id: @source_account.id,
-      destination_account_id: valuable.id,
+      destination_account_id: precious_asset.id,
       date: @date,
       amount: @amount
     )
@@ -235,12 +235,12 @@ class Transfer::CreatorTest < ActiveSupport::TestCase
     end
   end
 
-  test "refuses to book a transfer out of a valuable account" do
-    valuable = @family.accounts.create!(name: "Gold bars", balance: 0, currency: "USD", accountable: Valuable.new)
+  test "refuses to book a transfer out of a precious_asset account" do
+    precious_asset = @family.accounts.create!(name: "Gold bars", balance: 0, currency: "USD", accountable: PreciousAsset.new)
 
     creator = Transfer::Creator.new(
       family: @family,
-      source_account_id: valuable.id,
+      source_account_id: precious_asset.id,
       destination_account_id: @destination_account.id,
       date: @date,
       amount: @amount

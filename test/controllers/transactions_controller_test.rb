@@ -160,7 +160,7 @@ class TransactionsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "rejects manual transactions for Gems and Bullion accounts" do
-    account = @user.family.accounts.create!(name: "Gold collection", balance: 0, currency: "USD", accountable: Valuable.new)
+    account = @user.family.accounts.create!(name: "Gold collection", balance: 0, currency: "USD", accountable: PreciousAsset.new)
 
     assert_no_difference [ "Entry.count", "Transaction.count" ] do
       post transactions_url, params: {

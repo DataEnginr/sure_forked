@@ -2,10 +2,10 @@
 en:
   accounts:
     types:
-      valuable: Gems and Bullion
+      precious_asset: Gems and Bullion
     types_plural:
-      valuable: Gems and Bullion
-  valuables:
+      precious_asset: Gems and Bullion
+  precious_assets:
     new:
       title: Add Gems and Bullion
     edit:

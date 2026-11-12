@@ -32,7 +32,7 @@ class ValuationsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "rejects manual reconciliations for Gems and Bullion accounts" do
-    account = @user.family.accounts.create!(name: "Gold collection", balance: 0, currency: "USD", accountable: Valuable.new)
+    account = @user.family.accounts.create!(name: "Gold collection", balance: 0, currency: "USD", accountable: PreciousAsset.new)
 
     assert_no_difference [ "Entry.count", "Valuation.count" ] do
       post valuations_url, params: {

@@ -64,7 +64,7 @@ class GoalPledge < ApplicationRecord
     if is_valuation
       # Never match a valuation delta on an investment account: it may be a
       # market move, not a deposit, and would false-match (investment goals).
-      return false if account&.investment? || account&.valuable?
+      return false if account&.investment? || account&.precious_asset?
       return false if valuation_delta.nil? || valuation_delta.to_d <= 0
     elsif kind_transfer? && !entry.amount.to_d.negative?
       return false
@@ -162,7 +162,7 @@ class GoalPledge < ApplicationRecord
     end
 
     def account_can_receive_pledges
-      errors.add(:account, :cannot_receive_pledges) if account&.valuable?
+      errors.add(:account, :cannot_receive_pledges) if account&.precious_asset?
     end
 
     def currency_matches_goal

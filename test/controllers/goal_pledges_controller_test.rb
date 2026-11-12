@@ -66,7 +66,7 @@ class GoalPledgesControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "excludes Gems and Bullion accounts from pledge choices and rejects direct submission" do
-    account = @goal.family.accounts.create!(name: "Gold collection", balance: 0, currency: "USD", accountable: Valuable.new)
+    account = @goal.family.accounts.create!(name: "Gold collection", balance: 0, currency: "USD", accountable: PreciousAsset.new)
     @goal.goal_accounts.create!(account: account)
 
     get new_goal_pledge_url(@goal), headers: { "Turbo-Frame" => "modal" }

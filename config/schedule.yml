@@ -39,9 +39,9 @@ sync_property_valuations:
   queue: "scheduled"
   description: "Refreshes AVM property valuations once a month (providers enforce tight monthly request caps)"
 
-sync_valuable_valuations:
+sync_precious_asset_valuations:
   cron: "45 1 * * *" # daily at 1:45 AM UTC, before daily insights
-  class: "SyncValuableValuationsJob"
+  class: "SyncPreciousAssetValuationsJob"
   active_job: true
   queue: "scheduled"
   description: "Refreshes Gems and Bullion valuations daily using the configured spot-price provider"
