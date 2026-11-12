@@ -32,8 +32,8 @@ class Valuation::NameTest < ActiveSupport::TestCase
     assert_equal "Opening account value", name.to_s
   end
 
-  test "generates opening anchor name for Valuable" do
-    name = Valuation::Name.new("opening_anchor", "Valuable")
+  test "generates opening anchor name for PreciousAsset" do
+    name = Valuation::Name.new("opening_anchor", "PreciousAsset")
     assert_equal "Opening account value", name.to_s
   end
 
@@ -73,8 +73,8 @@ class Valuation::NameTest < ActiveSupport::TestCase
     assert_equal "Current account value", name.to_s
   end
 
-  test "generates current anchor name for Valuable" do
-    name = Valuation::Name.new("current_anchor", "Valuable")
+  test "generates current anchor name for PreciousAsset" do
+    name = Valuation::Name.new("current_anchor", "PreciousAsset")
     assert_equal "Current account value", name.to_s
   end
 
@@ -109,8 +109,8 @@ class Valuation::NameTest < ActiveSupport::TestCase
     assert_equal "Manual value update", name.to_s
   end
 
-  test "generates recon name for Valuable" do
-    name = Valuation::Name.new("reconciliation", "Valuable")
+  test "generates recon name for PreciousAsset" do
+    name = Valuation::Name.new("reconciliation", "PreciousAsset")
     assert_equal "Current valuation", name.to_s
   end
 
@@ -124,12 +124,12 @@ class Valuation::NameTest < ActiveSupport::TestCase
     assert_equal "Manual balance update", name.to_s
   end
 
-  test "maps Valuable opening and current anchors to account value keys" do
-    assert_equal :opening_account_value, Valuation::Name.new("opening_anchor", "Valuable").translation_key
-    assert_equal :current_account_value, Valuation::Name.new("current_anchor", "Valuable").translation_key
+  test "maps PreciousAsset opening and current anchors to account value keys" do
+    assert_equal :opening_account_value, Valuation::Name.new("opening_anchor", "PreciousAsset").translation_key
+    assert_equal :current_account_value, Valuation::Name.new("current_anchor", "PreciousAsset").translation_key
   end
 
-  test "maps a Valuable reconciliation to the current valuation key" do
-    assert_equal :current_valuation, Valuation::Name.new("reconciliation", "Valuable").translation_key
+  test "maps a PreciousAsset reconciliation to the current valuation key" do
+    assert_equal :current_valuation, Valuation::Name.new("reconciliation", "PreciousAsset").translation_key
   end
 end

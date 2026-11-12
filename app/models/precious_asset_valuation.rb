@@ -1,6 +1,6 @@
 # Values bullion from its material's spot quote. Gems and stones require a
 # manual or appraised value because carat alone does not establish a price.
-class ValuableValuation
+class PreciousAssetValuation
   Error = Class.new(StandardError)
 
   def initialize(account:, date: Date.current, reconciliation_name: nil)
@@ -19,7 +19,7 @@ class ValuableValuation
       validate_account!
       raise Error, "Account currency changed during valuation; refresh again" if account.currency != valuation_currency
 
-      items = account.valuable.items.reload
+      items = account.precious_asset.items.reload
       missing = items.select(&:spot_valued?).map(&:quote_symbol).uniq - rates.keys
       raise Error, "Purchases changed during valuation; refresh again" if missing.any?
 
@@ -27,11 +27,11 @@ class ValuableValuation
       result = account.set_current_balance(value, reconciliation_name: @reconciliation_name)
       raise Error, result.error unless result.success?
 
-      account.valuable.update!(valuation_pending: false, valued_at: Time.current)
+      account.precious_asset.update!(valuation_pending: false, valued_at: Time.current)
       value
     end
   rescue Error, ActiveRecord::RecordInvalid
-    account.valuable&.update_columns(valuation_pending: true) if account.valuable?
+    account.precious_asset&.update_columns(valuation_pending: true) if account.precious_asset?
     raise
   end
 
@@ -39,12 +39,12 @@ class ValuableValuation
     attr_reader :account, :date
 
     def validate_account!
-      raise Error, "This account is not a Gems and Bullion asset" unless account.valuable?
+      raise Error, "This account is not a Gems and Bullion asset" unless account.precious_asset?
       raise Error, "Spot prices can only be refreshed for today" unless date == Date.current
     end
 
     def spot_symbols
-      account.valuable.items.spot_valued.map(&:quote_symbol).compact.uniq
+      account.precious_asset.items.spot_valued.map(&:quote_symbol).compact.uniq
     end
 
     def rate_for(symbol)
@@ -87,7 +87,7 @@ class ValuableValuation
 
     def advisory_lock_sql(function, key)
       ActiveRecord::Base.sanitize_sql_array(
-        [ "SELECT #{function}(hashtext(?), hashtext(?))", "valuable_spot_rate", key ]
+        [ "SELECT #{function}(hashtext(?), hashtext(?))", "precious_asset_spot_rate", key ]
       )
     end
 
@@ -107,7 +107,7 @@ class ValuableValuation
     end
 
     def log_twelve_data_fallback(symbol, error)
-      DebugLogEntry.capture(category: symbol == "XAU" ? "gold_valuation" : "valuable_valuation", level: "warn", message: "Twelve Data #{symbol} quote unavailable; falling back to GoldAPI", source: "ValuableValuation#fetch_twelve_data_price", provider_key: "twelve_data", family: account.family, account: account, metadata: { account_id: account.id, symbol: symbol, error: error.message, failure_code: error.respond_to?(:failure_code) ? error.failure_code : nil })
+      DebugLogEntry.capture(category: symbol == "XAU" ? "gold_valuation" : "precious_asset_valuation", level: "warn", message: "Twelve Data #{symbol} quote unavailable; falling back to GoldAPI", source: "PreciousAssetValuation#fetch_twelve_data_price", provider_key: "twelve_data", family: account.family, account: account, metadata: { account_id: account.id, symbol: symbol, error: error.message, failure_code: error.respond_to?(:failure_code) ? error.failure_code : nil })
     end
 
     def convert_twelve_data_price(price)

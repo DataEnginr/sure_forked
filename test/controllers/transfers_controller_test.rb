@@ -38,7 +38,7 @@ class TransfersControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "rejects transfers to Gems and Bullion accounts" do
-    account = Current.family.accounts.create!(name: "Gold collection", balance: 0, currency: "USD", accountable: Valuable.new)
+    account = Current.family.accounts.create!(name: "Gold collection", balance: 0, currency: "USD", accountable: PreciousAsset.new)
 
     assert_no_difference [ "Transfer.count", "Entry.count" ] do
       post transfers_url, params: {

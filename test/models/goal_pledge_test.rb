@@ -24,7 +24,7 @@ class GoalPledgeTest < ActiveSupport::TestCase
   end
 
   test "does not allow pledges for Gems and Bullion accounts" do
-    account = @goal.family.accounts.create!(name: "Gold collection", balance: 0, currency: "USD", accountable: Valuable.new)
+    account = @goal.family.accounts.create!(name: "Gold collection", balance: 0, currency: "USD", accountable: PreciousAsset.new)
     @goal.goal_accounts.create!(account: account)
 
     pledge = @goal.goal_pledges.new(account: account, amount: 50, currency: "USD")

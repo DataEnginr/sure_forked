@@ -38,7 +38,7 @@ class Valuation::Name
         "Original purchase price"
       when "Loan"
         "Original principal"
-      when "Investment", "Crypto", "Valuable", "OtherAsset"
+      when "Investment", "Crypto", "PreciousAsset", "OtherAsset"
         "Opening account value"
       else
         "Opening balance"
@@ -52,7 +52,7 @@ class Valuation::Name
         "Current market value"
       when "Loan"
         "Current loan balance"
-      when "Investment", "Crypto", "Valuable", "OtherAsset"
+      when "Investment", "Crypto", "PreciousAsset", "OtherAsset"
         "Current account value"
       else
         "Current balance"
@@ -62,7 +62,7 @@ class Valuation::Name
     # Selects the persisted name for a manual reconciliation valuation.
     def recon_name
       case accountable_type
-      when "Valuable"
+      when "PreciousAsset"
         "Current valuation"
       when "Property", "Investment", "Vehicle", "Crypto", "OtherAsset"
         "Manual value update"
@@ -78,7 +78,7 @@ class Valuation::Name
       case accountable_type
       when "Property", "Vehicle" then :original_purchase_price
       when "Loan" then :original_principal
-      when "Investment", "Crypto", "Valuable", "OtherAsset" then :opening_account_value
+      when "Investment", "Crypto", "PreciousAsset", "OtherAsset" then :opening_account_value
       else :opening_balance
       end
     end
@@ -88,7 +88,7 @@ class Valuation::Name
       case accountable_type
       when "Property", "Vehicle" then :current_market_value
       when "Loan" then :current_loan_balance
-      when "Investment", "Crypto", "Valuable", "OtherAsset" then :current_account_value
+      when "Investment", "Crypto", "PreciousAsset", "OtherAsset" then :current_account_value
       else :current_balance
       end
     end
@@ -96,7 +96,7 @@ class Valuation::Name
     # Selects the translation key for a manual reconciliation valuation.
     def reconciliation_translation_key
       case accountable_type
-      when "Valuable" then :current_valuation
+      when "PreciousAsset" then :current_valuation
       when "Property", "Investment", "Vehicle", "Crypto", "OtherAsset" then :manual_value_update
       when "Loan" then :manual_principal_update
       else :manual_balance_update

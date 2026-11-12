@@ -1,7 +1,7 @@
-class Valuable < ApplicationRecord
+class PreciousAsset < ApplicationRecord
   include Accountable
 
-  has_many :items, class_name: "ValuableItem", dependent: :destroy
+  has_many :items, class_name: "PreciousAssetItem", dependent: :destroy
   alias_method :lots, :items
 
   class << self

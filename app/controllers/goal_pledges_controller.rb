@@ -71,7 +71,7 @@ class GoalPledgesController < ApplicationController
     end
 
     def set_pledgeable_accounts
-      @pledgeable_accounts = @goal.linked_accounts.reject(&:valuable?)
+      @pledgeable_accounts = @goal.linked_accounts.reject(&:precious_asset?)
     end
 
     def pledge_params

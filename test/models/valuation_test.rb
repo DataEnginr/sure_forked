@@ -17,8 +17,8 @@ class ValuationTest < ActiveSupport::TestCase
     assert_equal "Réévaluation annuelle", valuation.display_name(entry)
   end
 
-  test "localizes a Valuable reconciliation valuation" do
-    entry = Entry.new(name: "Current valuation", account: Account.new(accountable: Valuable.new))
+  test "localizes a PreciousAsset reconciliation valuation" do
+    entry = Entry.new(name: "Current valuation", account: Account.new(accountable: PreciousAsset.new))
     valuation = Valuation.new(kind: "reconciliation")
 
     I18n.with_locale(:fr) do

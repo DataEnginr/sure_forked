@@ -1,38 +1,38 @@
 require "test_helper"
 
-class ValuableValuationTest < ActiveSupport::TestCase
+class PreciousAssetValuationTest < ActiveSupport::TestCase
   setup do
-    @account = accounts(:investment).family.accounts.create!(name: "Physical Gold", currency: "USD", balance: 0, accountable: Valuable.new)
-    @account.valuable.lots.create!(description: "Bar", acquired_on: Date.current, weight: 100, weight_unit: "gram", karat: 24, cost_amount: 10_000)
+    @account = accounts(:investment).family.accounts.create!(name: "Physical Gold", currency: "USD", balance: 0, accountable: PreciousAsset.new)
+    @account.precious_asset.lots.create!(description: "Bar", acquired_on: Date.current, weight: 100, weight_unit: "gram", karat: 24, cost_amount: 10_000)
   end
 
   test "provider failure retains the previous balance and marks it pending" do
     @account.update!(balance: 123)
     Provider::Registry.stubs(:get_provider).returns(nil)
     assert_no_difference "Valuation.count" do
-      assert_raises(ValuableValuation::Error) { ValuableValuation.new(account: @account).refresh! }
+      assert_raises(PreciousAssetValuation::Error) { PreciousAssetValuation.new(account: @account).refresh! }
     end
     assert_equal 123, @account.reload.balance
-    assert @account.valuable.valuation_pending?
+    assert @account.precious_asset.valuation_pending?
   end
 
   test "manual and spot lots are summed without adding purchase costs" do
-    @account.valuable.lots.create!(description: "Jewelry", acquired_on: Date.current, weight: 100, weight_unit: "gram", karat: 18, cost_amount: 9_000, making_charge: 500, manual_value: 0)
+    @account.precious_asset.lots.create!(description: "Jewelry", acquired_on: Date.current, weight: 100, weight_unit: "gram", karat: 18, cost_amount: 9_000, making_charge: 500, manual_value: 0)
     ExchangeRate.create!(from_currency: "XAU", to_currency: "USD", date: Date.current, rate: 3_110.34768)
-    assert_equal 10_000, ValuableValuation.new(account: @account).refresh!
+    assert_equal 10_000, PreciousAssetValuation.new(account: @account).refresh!
   end
 
   test "keeps daily history and does not rewrite the opening balance" do
     @account.set_opening_anchor_balance(balance: 0, date: Date.current - 10.days)
-    @account.valuable.lots.first.update!(manual_value: 100)
-    ValuableValuation.new(account: @account).refresh!
+    @account.precious_asset.lots.first.update!(manual_value: 100)
+    PreciousAssetValuation.new(account: @account).refresh!
     today_entry = @account.entries.valuations.find_by!(date: Date.current)
     assert_equal 0, @account.opening_anchor_balance
     assert_equal "reconciliation", today_entry.valuation.kind
 
     travel_to 1.day.from_now do
-      @account.valuable.lots.first.update!(manual_value: 120)
-      ValuableValuation.new(account: @account).refresh!
+      @account.precious_asset.lots.first.update!(manual_value: 120)
+      PreciousAssetValuation.new(account: @account).refresh!
       assert_equal 100, today_entry.reload.amount
       assert_equal 120, @account.entries.valuations.find_by!(date: Date.current).amount
       assert_equal 0, @account.opening_anchor_balance
@@ -45,35 +45,35 @@ class ValuableValuationTest < ActiveSupport::TestCase
 
   test "refuses historical refresh even when a historical quote is cached" do
     ExchangeRate.create!(from_currency: "XAU", to_currency: "USD", date: Date.yesterday, rate: 3_000)
-    assert_raises(ValuableValuation::Error) { ValuableValuation.new(account: @account, date: Date.yesterday).refresh! }
+    assert_raises(PreciousAssetValuation::Error) { PreciousAssetValuation.new(account: @account, date: Date.yesterday).refresh! }
   end
 
   test "rechecks purchases changed while fetching a quote" do
     provider = mock
     Provider::Registry.stubs(:get_provider).with(:twelve_data).returns(provider)
     provider.expects(:fetch_gold_price).returns(Provider::Response.new(success?: true, data: Provider::TwelveData::GoldPrice.new(date: Date.current, currency: "USD", price_per_troy_ounce: 3_110.34768), error: nil))
-    valuation = ValuableValuation.new(account: @account)
-    @account.valuable.lots.load
-    @account.valuable.lots.first.update!(weight: 50)
+    valuation = PreciousAssetValuation.new(account: @account)
+    @account.precious_asset.lots.load
+    @account.precious_asset.lots.first.update!(weight: 50)
     assert_equal 5_000, valuation.refresh!
   end
 
   test "refuses a valuation when its account currency changes while fetching a quote" do
-    valuation = ValuableValuation.new(account: @account)
+    valuation = PreciousAssetValuation.new(account: @account)
     account = @account
     valuation.define_singleton_method(:rate_for) do |_symbol|
       account.update_columns(currency: "INR")
       Provider::GoldApi::Price.new(date: Date.current, currency: "USD", price_per_troy_ounce: 3_110.34768, symbol: "XAU")
     end
 
-    error = assert_raises(ValuableValuation::Error) { valuation.refresh! }
+    error = assert_raises(PreciousAssetValuation::Error) { valuation.refresh! }
 
     assert_equal "Account currency changed during valuation; refresh again", error.message
   end
 
   test "falls back to a local quote if USD conversion is unavailable" do
     @account.update_columns(currency: "INR")
-    @account.valuable.lots.update_all(currency: "INR")
+    @account.precious_asset.lots.update_all(currency: "INR")
     ExchangeRate.stubs(:find_or_fetch_rate).returns(nil)
     primary = mock
     fallback = mock
@@ -81,71 +81,71 @@ class ValuableValuationTest < ActiveSupport::TestCase
     Provider::Registry.stubs(:get_provider).with(:gold_api).returns(fallback)
     primary.expects(:fetch_gold_price).returns(Provider::Response.new(success?: true, data: Provider::TwelveData::GoldPrice.new(date: Date.current, currency: "USD", price_per_troy_ounce: 3_000), error: nil))
     fallback.expects(:fetch_gold_price).with(currency: "INR").returns(Provider::Response.new(success?: true, data: Provider::GoldApi::Price.new(date: Date.current, currency: "INR", price_per_troy_ounce: 248_827.8144), error: nil))
-    assert_in_delta 800_000, ValuableValuation.new(account: @account).refresh!, 0.01
+    assert_in_delta 800_000, PreciousAssetValuation.new(account: @account).refresh!, 0.01
   end
 
   test "uses the cached daily XAU rate and records the calculated account value" do
     ExchangeRate.create!(from_currency: "XAU", to_currency: "USD", date: Date.current, rate: 3_110.34768)
 
-    value = ValuableValuation.new(account: @account).refresh!
+    value = PreciousAssetValuation.new(account: @account).refresh!
 
     assert_in_delta 10_000, value, 0.01
     assert_in_delta 10_000, @account.reload.balance, 0.01
   end
 
   test "sums separately valued lots with different karats" do
-    @account.valuable.lots.destroy_all
-    @account.valuable.lots.create!(description: "Bar", acquired_on: Date.current, weight: 100, weight_unit: "gram", karat: 24, cost_amount: 10_000)
-    @account.valuable.lots.create!(description: "Jewelry", acquired_on: Date.current, weight: 100, weight_unit: "gram", karat: 18, cost_amount: 7_500)
+    @account.precious_asset.lots.destroy_all
+    @account.precious_asset.lots.create!(description: "Bar", acquired_on: Date.current, weight: 100, weight_unit: "gram", karat: 24, cost_amount: 10_000)
+    @account.precious_asset.lots.create!(description: "Jewelry", acquired_on: Date.current, weight: 100, weight_unit: "gram", karat: 18, cost_amount: 7_500)
     ExchangeRate.create!(from_currency: "XAU", to_currency: "USD", date: Date.current, rate: 3_110.34768)
 
-    value = ValuableValuation.new(account: @account).refresh!
+    value = PreciousAssetValuation.new(account: @account).refresh!
 
     assert_in_delta 17_500, value, 0.01
     assert_in_delta 17_500, @account.reload.balance, 0.01
   end
 
   test "multiplies spot value by quantity" do
-    @account.valuable.lots.first.update!(quantity: 2)
+    @account.precious_asset.lots.first.update!(quantity: 2)
     ExchangeRate.create!(from_currency: "XAU", to_currency: "USD", date: Date.current, rate: 3_110.34768)
 
-    value = ValuableValuation.new(account: @account).refresh!
+    value = PreciousAssetValuation.new(account: @account).refresh!
 
     assert_in_delta 20_000, value, 0.01
     assert_in_delta 20_000, @account.reload.balance, 0.01
   end
 
   test "does not multiply a manual value by quantity" do
-    @account.valuable.lots.first.update!(quantity: 2, manual_value: 12_500)
+    @account.precious_asset.lots.first.update!(quantity: 2, manual_value: 12_500)
 
-    value = ValuableValuation.new(account: @account).refresh!
+    value = PreciousAssetValuation.new(account: @account).refresh!
 
     assert_in_delta 12_500, value, 0.01
     assert_in_delta 12_500, @account.reload.balance, 0.01
   end
 
   test "values an empty collection at zero" do
-    @account.valuable.lots.destroy_all
+    @account.precious_asset.lots.destroy_all
 
-    assert_equal 0, ValuableValuation.new(account: @account).refresh!
+    assert_equal 0, PreciousAssetValuation.new(account: @account).refresh!
   end
 
   test "does not fetch or store a latest quote for a historical date" do
     Provider::Registry.expects(:get_provider).never
 
-    assert_raises(ValuableValuation::Error) do
-      ValuableValuation.new(account: @account, date: Date.current - 1.day).refresh!
+    assert_raises(PreciousAssetValuation::Error) do
+      PreciousAssetValuation.new(account: @account, date: Date.current - 1.day).refresh!
     end
 
     assert_nil ExchangeRate.find_by(from_currency: "XAU", to_currency: "USD", date: Date.current - 1.day)
   end
 
   test "uses an individual manual value without requesting a spot price" do
-    @account.valuable.lots.first.update!(manual_value: 12_500)
+    @account.precious_asset.lots.first.update!(manual_value: 12_500)
     Provider::Registry.expects(:get_provider).with(:twelve_data).never
     Provider::Registry.expects(:get_provider).with(:gold_api).never
 
-    ValuableValuation.new(account: @account).refresh!
+    PreciousAssetValuation.new(account: @account).refresh!
 
     assert_in_delta 12_500, @account.reload.balance, 0.01
   end
@@ -162,14 +162,14 @@ class ValuableValuationTest < ActiveSupport::TestCase
       )
     )
 
-    ValuableValuation.new(account: @account).refresh!
+    PreciousAssetValuation.new(account: @account).refresh!
 
     assert_in_delta 10_000, @account.reload.balance, 0.01
   end
 
   test "converts the Twelve Data USD Gold Spot quote to the account currency" do
     @account.update_columns(currency: "INR")
-    @account.valuable.lots.update_all(currency: "INR")
+    @account.precious_asset.lots.update_all(currency: "INR")
     ExchangeRate.create!(from_currency: "USD", to_currency: "INR", date: Date.current, rate: 80)
     twelve_data = mock
     Provider::Registry.expects(:get_provider).with(:twelve_data).returns(twelve_data)
@@ -182,7 +182,7 @@ class ValuableValuationTest < ActiveSupport::TestCase
       )
     )
 
-    ValuableValuation.new(account: @account).refresh!
+    PreciousAssetValuation.new(account: @account).refresh!
 
     assert_in_delta 800_000, @account.reload.balance, 0.01
     assert_in_delta 248_827.8144, ExchangeRate.find_by!(from_currency: "XAU", to_currency: "INR", date: Date.current).rate, 0.0001
@@ -205,7 +205,7 @@ class ValuableValuationTest < ActiveSupport::TestCase
     )
 
     assert_difference -> { DebugLogEntry.with_provider_key("twelve_data").count }, 1 do
-      ValuableValuation.new(account: @account).refresh!
+      PreciousAssetValuation.new(account: @account).refresh!
     end
 
     assert_in_delta 10_000, @account.reload.balance, 0.01
@@ -228,7 +228,7 @@ class ValuableValuationTest < ActiveSupport::TestCase
     )
 
     assert_difference -> { DebugLogEntry.with_provider_key("twelve_data").count }, 1 do
-      assert_raises(ValuableValuation::Error) { ValuableValuation.new(account: @account).refresh! }
+      assert_raises(PreciousAssetValuation::Error) { PreciousAssetValuation.new(account: @account).refresh! }
     end
 
     assert_equal "Commodity access requires a higher plan", DebugLogEntry.with_provider_key("twelve_data").recent.first.metadata["error"]
@@ -246,8 +246,8 @@ class ValuableValuationTest < ActiveSupport::TestCase
       )
     )
 
-    ValuableValuation.new(account: @account).refresh!
-    ValuableValuation.new(account: @account).refresh!
+    PreciousAssetValuation.new(account: @account).refresh!
+    PreciousAssetValuation.new(account: @account).refresh!
 
     assert_equal 1, ExchangeRate.where(from_currency: "XAU", to_currency: "USD", date: Date.current).count
   end
@@ -266,14 +266,14 @@ class ValuableValuationTest < ActiveSupport::TestCase
     winning_rate = Struct.new(:date, :rate).new(Date.current, 3_110.34768)
     ExchangeRate.expects(:create_or_find_by!).returns(winning_rate)
 
-    value = ValuableValuation.new(account: @account).refresh!
+    value = PreciousAssetValuation.new(account: @account).refresh!
 
     assert_in_delta 10_000, value, 0.01
     assert_in_delta 10_000, @account.reload.balance, 0.01
   end
 
   test "rechecks the spot-rate cache after acquiring its lock" do
-    valuation = ValuableValuation.new(account: @account)
+    valuation = PreciousAssetValuation.new(account: @account)
     Provider::Registry.expects(:get_provider).never
     valuation.define_singleton_method(:with_spot_rate_lock) do |_symbol, &block|
       ExchangeRate.create!(from_currency: "XAU", to_currency: "USD", date: Date.current, rate: 3_110.34768)

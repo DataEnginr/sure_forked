@@ -1,10 +1,10 @@
 require "test_helper"
 
-class ValuableTest < ActiveSupport::TestCase
+class PreciousAssetTest < ActiveSupport::TestCase
   include ActiveJob::TestHelper
 
   setup do
-    @account = accounts(:investment).family.accounts.create!(name: "Physical gold", currency: "USD", balance: 0, accountable: Valuable.new)
+    @account = accounts(:investment).family.accounts.create!(name: "Physical gold", currency: "USD", balance: 0, accountable: PreciousAsset.new)
   end
 
   test "is a non cash asset independent of brokerage investments" do
@@ -15,7 +15,7 @@ class ValuableTest < ActiveSupport::TestCase
     assert_equal "transfer", @account.default_pledge_kind
     assert accounts(:investment).supports_trades?
     assert accounts(:investment).supports_statements?
-    assert Valuable.new.valid?
+    assert PreciousAsset.new.valid?
   end
 
   test "currency changes are allowed before purchases and refused after" do
@@ -30,18 +30,18 @@ class ValuableTest < ActiveSupport::TestCase
   test "deleting the account destroys its lots and receipts" do
     lot = create_lot
     lot.invoice.attach(io: StringIO.new("receipt"), filename: "receipt.pdf", content_type: "application/pdf")
-    assert_difference "ValuableItem.count", -1 do
-      assert_difference "Valuable.count", -1 do
+    assert_difference "PreciousAssetItem.count", -1 do
+      assert_difference "PreciousAsset.count", -1 do
         @account.destroy!
       end
     end
-    assert_not ActiveStorage::Attachment.exists?(record_type: "ValuableItem", record_id: lot.id)
+    assert_not ActiveStorage::Attachment.exists?(record_type: "PreciousAssetItem", record_id: lot.id)
   end
 
   test "lot changes enqueue valuation only when committed" do
-    assert_enqueued_with(job: RefreshValuableValuationJob, args: [ @account.id ]) { create_lot }
-    assert_no_enqueued_jobs(only: RefreshValuableValuationJob) do
-      ValuableItem.transaction do
+    assert_enqueued_with(job: RefreshPreciousAssetValuationJob, args: [ @account.id ]) { create_lot }
+    assert_no_enqueued_jobs(only: RefreshPreciousAssetValuationJob) do
+      PreciousAssetItem.transaction do
         create_lot
         raise ActiveRecord::Rollback
       end
@@ -58,6 +58,6 @@ class ValuableTest < ActiveSupport::TestCase
 
   private
     def create_lot
-      @account.valuable.lots.create!(description: "Bar", acquired_on: Date.current, weight: 1, weight_unit: "troy_ounce", karat: 24, cost_amount: 100, manual_value: 120)
+      @account.precious_asset.lots.create!(description: "Bar", acquired_on: Date.current, weight: 1, weight_unit: "troy_ounce", karat: 24, cost_amount: 100, manual_value: 120)
     end
 end

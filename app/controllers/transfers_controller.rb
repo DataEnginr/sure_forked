@@ -286,7 +286,7 @@ class TransfersController < ApplicationController
 
     def set_accounts
       @accounts = accessible_accounts
-        .where.not(accountable_type: "Valuable")
+        .where.not(accountable_type: "PreciousAsset")
         .active
         .alphabetically
         .includes(

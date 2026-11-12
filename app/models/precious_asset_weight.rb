@@ -1,4 +1,4 @@
-module ValuableWeight
+module PreciousAssetWeight
   TROY_OUNCE_GRAMS = BigDecimal("31.1034768")
   CARAT_GRAMS = BigDecimal("0.2")
 

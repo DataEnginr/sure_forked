@@ -3,7 +3,7 @@ en:
   activerecord:
     errors:
       models:
-        valuable_item:
+        precious_asset_item:
           attributes:
             merchant:
               must_belong_to_account_family: must belong to the account family
